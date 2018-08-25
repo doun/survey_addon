@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record model="ir.ui.view" id="survey_page_form">
+            <field name='inherit_id' ref='survey.survey_page_form'/>
+            <field name="model">survey.page</field>
+            <field name='arch' type='xml'>
+                <field name="title" position='after'>
+                    <field name='description'/>
+                </field>
+            </field>
+        </record>
+        <!-- QUESTIONS -->
+        <record model="ir.ui.view" id="survey_question_form">
+            <field name='inherit_id' ref='survey.survey_question_form'/>
+            <field name="model">survey.question</field>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='constr_mandatory']" position='before'>
+                    <field name="image_only" attrs="{'invisible': [('type', 'not in', ['attach'])]}"></field>
+                    <field name="file_name" attrs="{'invisible': [('type', 'not in', ['attach'])]}"></field>
+                </xpath>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="survey_my_user_input_form">
+            <field name="name">survey_user_input_form</field>
+            <field name='inherit_id' ref='survey.survey_user_input_form'></field>
+            <field name="model">survey.user_input</field>
+            <field name="arch" type="xml">
+                <form position="attributes">
+                    <attribute name='create'>true</attribute>
+                </form>
+                <field name="partner_id" position='replace'>
+                    <field name='partner_id' attr="{'readonly':[('state','!=','new')]}" />
+                </field>
+                <field name="survey_id" position='replace'>
+                    <field name='survey_id' attr="{'readonly':[('state','!=','new')]}" />
+                </field>
+                <field name="state" position='before'>
+                    <button name="action_open_url" string="Open URL" type="object" />
+                </field>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="survey_my_user_input_tree">
+            <field name="name">survey_user_input_tree</field>
+            <field name='inherit_id' ref='survey.survey_user_input_tree'/>
+            <field name="model">survey.user_input</field>
+            <field name="arch" type="xml">
+                <tree position='attributes'>
+                    <attribute name='create'>true</attribute>
+                </tree>
+            </field>
+        </record>
+
+        <record model="ir.actions.act_window" id="action_show_user_input">
+            <field name="name">Answers</field>
+            <field name="res_model">survey.user_input</field>
+            <field name="view_mode">tree, form</field>
+            <field name="view_id" ref="survey_addon.survey_my_user_input_tree"></field>
+            <field name="help" type="html">
+                <p>Start A survey...</p>
+            </field>
+        </record>
+
+    </data>
+</odoo>

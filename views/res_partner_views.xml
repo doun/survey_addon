@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id='act_res_partner_2_survey_userinput' model="ir.actions.act_window">
+            <field name="name">Survey User Inputs </field>
+            <field name="res_model">survey.user_input</field>
+            <field name="view_mode">tree,form</field>
+            <field name="domain">[('partner_id','=', active_id)]</field>
+        </record>
+
+        <record id="res_partner_view_buttons" model="ir.ui.view">
+            <field name="name">res.partner.view.buttons</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <button name="toggle_active" position="before">
+                    <button class="oe_stat_button" type="action" context="{'default_email': email}" name="%(survey_addon.act_res_partner_2_survey_userinput)d" icon="fa-clone">
+                        <field string="user answers count" name="survey_input_count" widget="statinfo"/>
+                    </button>
+                </button>
+            </field>
+        </record>
+    </data>
+</odoo>

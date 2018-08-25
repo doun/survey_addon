@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data>
+    <template id="page" inherit_id='survey.page'>
+        <xpath expr="//div[@t-field='question.description']" position='after'>
+            <t t-if="question.type=='attach'">
+                <t t-call='survey_addon.attach'/>
+            </t>
+        </xpath>
+        <div class="page-header" position='before'>
+            <link href="/survey_addon/static/css/fileinput.min.css" media="all" rel="stylesheet" type="text/css" />
+            <script type='text/javascript' src="/survey_addon/static/js/fileinput.js" />
+            <script type='text/javascript' src='/survey_addon/static/js/app.js'/>
+        </div>
+    </template>
+
+    <!-- Question widgets -->
+    <template id="attach" name="attach">
+        <input type='file' t-att-name='prefix' class='question-attach' t-att-data-required ="question.validation_required"/>
+        <input type='hidden' t-att-name='prefix + "_removed"' value='false'/>
+    </template>
+</data>
+</odoo>
