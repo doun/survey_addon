@@ -26,11 +26,13 @@ class SurveyQuestion(models.Model):
     def validate_attach(self, post, answer_tag):
         self.ensure_one()
         errors = {}
-        answer = post[answer_tag].strip()
-        removed = post[answer_tag +'_removed'].strip()
+        #answer = post[answer_tag]
+        removed = post[answer_tag].strip() == 'false'
         # Empty answer to mandatory question
-        if self.constr_mandatory and removed == 'true':
+        # removed: true:删除了内容, false:有内容, '': 无内容
+        if self.constr_mandatory and removed:
             errors.update({answer_tag: self.constr_error_msg})
+        #TODO: 检查第一次提交时，没有添加文件
 
         return errors
 
