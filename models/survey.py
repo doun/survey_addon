@@ -26,13 +26,14 @@ class SurveyQuestion(models.Model):
     def validate_attach(self, post, answer_tag):
         self.ensure_one()
         errors = {}
-        #answer = post[answer_tag]
-        removed = post[answer_tag].strip() == 'false'
-        # Empty answer to mandatory question
-        # removed: true:删除了内容, false:有内容, '': 无内容
-        if self.constr_mandatory and removed:
+        file_tag = 'file_' + answer_tag
+        has_data = False
+        if answer_tag in post and post[answer_tag] != 'remove':
+            has_data = True
+        if file_tag in post and post[file_tag]:
+            has_data = True
+        if self.constr_mandatory and not has_data:
             errors.update({answer_tag: self.constr_error_msg})
-        #TODO: 检查第一次提交时，没有添加文件
 
         return errors
 
@@ -43,6 +44,7 @@ class SurveyInputLine(models.Model):
     @api.model
     def save_line_attach(self, user_input_id, question, post, answer_tag):
         Attach = self.env['ir.attachment']
+        file_tag = "file_" + answer_tag
         vals = {
             'user_input_id': user_input_id,
             'question_id': question.id,
@@ -60,18 +62,18 @@ class SurveyInputLine(models.Model):
             old_uil.create(vals)
 
         # 删除
-        if answer_tag + "_removed" in post:
-            if post[answer_tag + "_removed"] == 'true':
+        if answer_tag in post:
+            if post[answer_tag] == 'remove':
                 vals.update({'skipped': True, 'value_number': 0})
                 if old_uil.value_number > 0:
                     Attach.browse([int(old_uil.value_number)]).unlink()
                 old_uil.write(vals)
                 return True
 
-        if answer_tag in post:
-            file = post[answer_tag]
+        if file_tag in post:
+            file = post[file_tag]
             if file:
-                content = file.stream.getvalue()
+                content = file.read()
                 vals.update({'skipped': False})
                 # 替换文件内容
                 if old_uil.value_number > 0:

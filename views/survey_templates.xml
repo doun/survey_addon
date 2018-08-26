@@ -9,8 +9,8 @@
             </xpath>
             <div class="page-header" position='before'>
                 <link href="/survey_addon/static/css/fileinput.min.css" media="all" rel="stylesheet" type="text/css" />
-                <script type='text/javascript' src="/survey_addon/static/js/fileinput.min.js" />
                 <script type='text/javascript' src='/survey_addon/static/js/plugins/piexif.min.js'/>
+                <script type='text/javascript' src="/survey_addon/static/js/fileinput.js" />
                 <script type='text/javascript' src='/survey_addon/static/js/locales/zh.js'/>
                 <script type='text/javascript' src='/survey_addon/static/js/app.js'/>
             </div>
