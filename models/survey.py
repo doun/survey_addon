@@ -20,6 +20,7 @@ class SurveyQuestion(models.Model):
     _inherit = "survey.question"
     type = fields.Selection(selection_add=[('attach', '附件')])
     image_only = fields.Boolean('仅图片')
+    file_ext = fields.Char('文件类型')
     file_name = fields.Char('保存文件名')
 
     @api.multi
@@ -49,7 +50,7 @@ class SurveyInputLine(models.Model):
             'user_input_id': user_input_id,
             'question_id': question.id,
             'survey_id': question.survey_id.id,
-            'answer_type': 'number'
+            'answer_type': 'text'
         }
 
         old_uil = self.search([
@@ -64,8 +65,8 @@ class SurveyInputLine(models.Model):
         # 删除
         if answer_tag in post:
             if post[answer_tag] == 'remove':
-                vals.update({'skipped': True, 'value_number': 0})
-                if old_uil.value_number > 0:
+                vals.update({'skipped': True, 'value_text': ''})
+                if old_uil.value_number:
                     Attach.browse([int(old_uil.value_number)]).unlink()
                 old_uil.write(vals)
                 return True
@@ -76,7 +77,7 @@ class SurveyInputLine(models.Model):
                 content = file.read()
                 vals.update({'skipped': False})
                 # 替换文件内容
-                if old_uil.value_number > 0:
+                if old_uil.value_text:
                     att = Attach.browse([int(old_uil.value_number)])
                     att.write({'datas': base64.b64decode(content)})
                     #vals.update({'value_number': att.id}) 重用这条记录，只是更新内容
@@ -92,7 +93,7 @@ class SurveyInputLine(models.Model):
                         'res_id': user_input_id
                     }
                     att = Attach.create(att)
-                    vals.update({'value_number': att.id, 'skipped': False})
+                    vals.update({'value_text': att.id, 'skipped': False})
                     old_uil.write(vals)
         return True
 
