@@ -59,16 +59,14 @@ class SurveyInputLine(models.Model):
             ('question_id', '=', question.id)
         ])
 
-        if not old_uil:
-            old_uil.create(vals)
-
         # 删除
         if answer_tag in post:
             if post[answer_tag] == 'remove':
                 vals.update({'skipped': True, 'value_text': ''})
-                if old_uil.value_number:
-                    Attach.browse([int(old_uil.value_number)]).unlink()
-                old_uil.write(vals)
+                if old_uil:
+                    if old_uil.value_text:
+                        Attach.browse([int(old_uil.value_text)]).unlink()
+                    old_uil.write(vals)
                 return True
 
         if file_tag in post:
@@ -77,11 +75,10 @@ class SurveyInputLine(models.Model):
                 content = file.read()
                 vals.update({'skipped': False})
                 # 替换文件内容
-                if old_uil.value_text:
-                    att = Attach.browse([int(old_uil.value_number)])
-                    att.write({'datas': base64.b64decode(content)})
-                    #vals.update({'value_number': att.id}) 重用这条记录，只是更新内容
-                    old_uil.write(vals)
+                if old_uil:
+                    if old_uil.value_text:
+                        att = Attach.browse([int(old_uil.value_text)])
+                        att.write({'datas': base64.b64decode(content)})
                 else:
                 #新增文件
                     att = {
@@ -93,8 +90,11 @@ class SurveyInputLine(models.Model):
                         'res_id': user_input_id
                     }
                     att = Attach.create(att)
-                    vals.update({'value_text': att.id, 'skipped': False})
-                    old_uil.write(vals)
+                    vals.update({'value_text': str(att.id), 'skipped': False})
+        if old_uil:
+            old_uil.write(vals)
+        else:
+            old_uil.create(vals)
         return True
 
 

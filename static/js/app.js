@@ -14,20 +14,30 @@ odoo.define("survey_addon.attach", function (require) {
     function set_fileinput(ele) {
         var required = $(ele).data('required');
         var image_only = $(ele).data('image_only');
-        var tag = $(ele).attr('name').replace('file_', '');
-        var value = $("input[name='" + tag + "']").val() - 0;
+        var tag = $(ele).data('tag');
+        var ext = $(ele).data('file_ext')
+        if (ext) {
+            ext = ext.split(',');
+            if (ext.length == 0) ext = null;
+        }
+        var value = $("input[name='" + tag + "']").val();
         $(ele).fileinput({
             showRemove: !required,
             showCaption: false,
             language: 'zh',
             dropZoneEnabled: false,
             allowedFileTypes: image_only ? ['image'] : null,
+            allowedFileExtensions: ext,
             initialPreviewShowDelete: false,
             initialPreview: [
                 value > 0 ? "<img class='kv-preview-data file-preview-image' alt='img' title='img' src='/web/image/"
-                    + value + "'>":'',
+                    + value + "'>" : '',
             ],
             showUpload: false,
+        });
+        $(ele).on('filebeforedelete', function(event, key, data) {
+            event.cancel();
+            console.log('Key = ' + key);
         });
     }
 
