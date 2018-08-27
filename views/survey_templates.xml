@@ -18,7 +18,8 @@
 
         <!-- Question widgets -->
         <template id="attach" name="attach">
-            <input t-att-name='"file_" + prefix' type='file' class='question-attach'
+            <input t-att-name='"file_" + prefix' type='file' class='question-attach' t-att-data-tag='prefix'
+            t-att-data-file_ext = 'question.file_ext'
            t-att-data-image_only = 'question.image_only'
            t-att-data-required ="question.constr_mandatory"/>
             <input type='hidden' class="o-attach-value" t-att-name='prefix' value=''/>
