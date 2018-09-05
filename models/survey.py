@@ -11,7 +11,7 @@ from itertools import product
 from werkzeug import urls
 
 from odoo import api, fields, models, tools, SUPERUSER_ID, _
-#from odoo.addons.http_routing.models.ir_http import slug
+# from odoo.addons.http_routing.models.ir_http import slug
 from odoo.exceptions import UserError, ValidationError
 _logger = logging.getLogger(__name__)
 
@@ -38,6 +38,7 @@ class SurveyQuestion(models.Model):
 
         return errors
 
+
 class SurveyInputLine(models.Model):
     _inherit = 'survey.user_input_line'
     answer_type = fields.Selection(selection_add=[('attach', '附件')])
@@ -50,7 +51,7 @@ class SurveyInputLine(models.Model):
             'user_input_id': user_input_id,
             'question_id': question.id,
             'survey_id': question.survey_id.id,
-            'answer_type': 'text'
+            'answer_type': 'number'
         }
 
         old_uil = self.search([
@@ -60,37 +61,36 @@ class SurveyInputLine(models.Model):
         ])
 
         # 删除
-        if answer_tag in post:
-            if post[answer_tag] == 'remove':
-                vals.update({'skipped': True, 'value_text': ''})
-                if old_uil:
-                    if old_uil.value_text:
-                        Attach.browse([int(old_uil.value_text)]).unlink()
-                    old_uil.write(vals)
-                return True
-
-        if file_tag in post:
-            file = post[file_tag]
-            if file:
-                content = file.read()
-                vals.update({'skipped': False})
-                # 替换文件内容
-                if old_uil:
-                    if old_uil.value_text:
-                        att = Attach.browse([int(old_uil.value_text)])
+        if (answer_tag in post and post[answer_tag] == 'remove') or answer_tag not in post:
+            vals.update({'value_number': ''})
+            if old_uil and old_uil.value_number:
+                Attach.browse([int(old_uil.value_number)]).sudo().unlink()
+                old_uil.write(vals)
+            return True
+        else:
+            if file_tag in post:
+                file = post[file_tag]
+                if file:
+                    content = file.read()
+                    vals.update({'skipped': False})
+                    # 替换文件内容
+                    if old_uil and old_uil.value_number:
+                        att = Attach.browse([int(old_uil.value_number)])
                         att.write({'datas': base64.b64decode(content)})
-                else:
-                #新增文件
-                    att = {
-                        'name': question.file_name,
-                        'datas_fname': question.file_name,
-                        'res_model': 'survey.user_input',
-                        'datas': base64.b64encode(content),
-                        'res_field': question.id,
-                        'res_id': user_input_id
-                    }
-                    att = Attach.create(att)
-                    vals.update({'value_text': str(att.id), 'skipped': False})
+                    else:
+                        # 新增文件
+                        att = {
+                            'name': question.file_name,
+                            'datas_fname': question.file_name,
+                            'res_model': 'survey.user_input',
+                            'datas': base64.b64encode(content),
+                            'res_field': question.id,
+                            'res_id': user_input_id
+                        }
+                        att = Attach.create(att)
+                        vals.update(
+                            {'value_number': str(att.id), 'skipped': False})
+
         if old_uil:
             old_uil.write(vals)
         else:
