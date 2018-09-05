@@ -102,6 +102,7 @@ class SurveyUserInput(models.Model):
     _inherit = 'survey.user_input'
     survey_id = fields.Many2one('survey.survey', readonly=False)
     partner_id = fields.Many2one('res.partner', readonly=False)
+    state = fields.Selection(readonly=False)
     type = fields.Selection(readonly=False)
     email = fields.Char(readonly=False)
 
