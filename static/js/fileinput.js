@@ -2733,9 +2733,9 @@
                     extraData = extraData();
                 }
                 params = {id: $el.attr('id'), key: vKey, extra: extraData};
-                fnBefore = function (jqXHR) {
+                fnBefore = function (jqXHR, params) {
                     self.ajaxAborted = false;
-                    self._raise('filepredelete', [vKey, jqXHR, extraData]);
+                    self._raise('filepredelete', [vKey, jqXHR, extraData, params]);
                     if (self._abort()) {
                         jqXHR.abort();
                     } else {

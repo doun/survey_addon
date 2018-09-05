@@ -10,7 +10,7 @@
 
 odoo.define("survey_addon.attach", function (require) {
     require('survey.survey');
-
+    var last_event = null;
     function set_fileinput(ele) {
         var required = $(ele).data('required');
         var image_only = $(ele).data('image_only');
@@ -20,7 +20,7 @@ odoo.define("survey_addon.attach", function (require) {
             ext = ext.split(',');
             if (ext.length == 0) ext = null;
         }
-        var value = $("input[name='" + tag + "']").val();
+        var value = $("input[name='" + tag + "']").val() - 0;
         $(ele).fileinput({
             showRemove: !required,
             showCaption: false,
@@ -33,17 +33,42 @@ odoo.define("survey_addon.attach", function (require) {
                 value > 0 ? "<img class='kv-preview-data file-preview-image' alt='img' title='img' src='/web/image/"
                     + value + "'>" : '',
             ],
+            initialPreviewConfig: [
+                { url: "/site/file-delete", key: 1 }
+            ],
             showUpload: false,
-        });
-        $(ele).on('filebeforedelete', function(event, key, data) {
-            event.cancel();
-            console.log('Key = ' + key);
+        }).on('filebeforedelete', function (event) {
+            if (last_event != event) {
+                last_event = event;
+                return false;
+            }
+            if (required) {
+                window.alert('必填字段，不允许删除');
+            }
+            var confirmed = window.confirm('确认删除?');
+            if (confirmed) {
+                $("input[name='" + tag + "']").val('remove');
+                return true;
+            }
+        }).on('filepredelete', function (event, key, jqXHR, data) {
+            if(last_event != event){
+                last_event = event;
+                return false;
+            }
+            jqXHR.abort();
+            
+            arguments[4].success.apply(this);
+            return false;
         });
     }
 
     function set_initial_img() {
         $('.o-attach-value').on('value-changed', function () {
-            set_fileinput($("input[name='file_" + this.name + "']").fileinput('destroy'));
+            if ($(this).val() != 'remove') {
+                var ele = $("input[name='file_" + this.name + "']");
+                ele.fileinput('destroy');
+                set_fileinput(ele);
+            }
         });
     }
 
