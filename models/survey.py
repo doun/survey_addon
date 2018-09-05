@@ -84,7 +84,7 @@ class SurveyInputLine(models.Model):
                             'datas_fname': question.file_name,
                             'res_model': 'survey.user_input',
                             'datas': base64.b64encode(content),
-                            'res_field': question.id,
+                            #'res_field': question.id,
                             'res_id': user_input_id
                         }
                         att = Attach.create(att)
