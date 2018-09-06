@@ -20,6 +20,9 @@
                     <field name="file_name" attrs="{'invisible': [('type', 'not in', ['attach'])]}"></field>
                     <field name="file_ext" attrs="{'invisible': [('type', 'not in', ['attach'])]}"></field>
                 </xpath>
+                <field name="question" position='after'>
+                    <field name='description'/>
+                </field>
             </field>
         </record>
 
@@ -39,6 +42,9 @@
                 </field>
                 <field name="state" position='before'>
                     <button name="action_open_url" string="打开链接" type="object" />
+                </field>
+                <field name='state' position='attributes'>
+                    <attribute name='clickable'>True</attribute>
                 </field>
             </field>
         </record>
