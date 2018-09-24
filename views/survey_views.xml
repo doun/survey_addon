@@ -36,12 +36,14 @@
                 </form>
                 <field name="partner_id" position='replace'>
                     <field name='partner_id' attr="{'readonly':[('state','!=','new')]}" />
+                    <field name='task_id' domain="[('partner_id', '=', partner_id)]" />
                 </field>
                 <field name="survey_id" position='replace'>
                     <field name='survey_id' attr="{'readonly':[('state','!=','new')]}" />
                 </field>
                 <field name="state" position='before'>
                     <button name="action_open_url" string="打开链接" type="object" />
+                    <button name='pack_as_attach' string="打包为附件" type='object'/>
                 </field>
                 <field name='state' position='attributes'>
                     <attribute name='clickable'>True</attribute>

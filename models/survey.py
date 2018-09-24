@@ -3,6 +3,7 @@
 
 import datetime
 import logging
+import csv
 import re
 import base64
 import uuid
@@ -97,14 +98,53 @@ class SurveyInputLine(models.Model):
             old_uil.create(vals)
         return True
 
+def to_csv_line(line):
+     title = line.question_id.question
+     val = ""
+     if 'text' in str(line.answer_type):
+         val = line.value_text
+     if line.answer_type == 'date':
+         val = line.value_date
+     if line.answer_type == 'suggestion':
+         #val = line.question_id.labels_ids[line.value_suggested].value
+         val = line.value_suggested.value
+     if line.answer_type == 'number':
+         val = line.value_number
+     return (title, str(val))
 
 class SurveyUserInput(models.Model):
     _inherit = 'survey.user_input'
     survey_id = fields.Many2one('survey.survey', readonly=False)
     partner_id = fields.Many2one('res.partner', readonly=False)
+    task_id = fields.Many2one('project.task', string='附加到任务')
+
     state = fields.Selection(readonly=False)
     type = fields.Selection(readonly=False)
     email = fields.Char(readonly=False)
+
+    @api.multi
+    def pack_as_attach(self):
+        self.ensure_one()
+        Attach = self.env['ir.attachment']
+        # TODO: Step1. Gen csv from inputs
+        csv_f = csv.StringIO()
+        csv_w = csv.DictWriter(csv_f, ['title', 'value'])
+        lines = [to_csv_line(l) for l in self.user_input_line_ids if l.question_id.type != 'attach' and l.skipped == False]
+        for t, v in lines:
+            csv_w.writerow({'title': t, 'value': v})
+
+        att = {
+            'name': "data.csv",
+            'datas_fname': "data.csv",
+            'res_model': 'survey.user_input',
+            'datas': base64.b64encode(csv_f.getvalue().encode('utf-8')),
+            # 'res_field': question.id,
+            'res_id': self.id,
+        }
+        csv_att = Attach.create(att)
+
+        # Step2. Gen zip
+        return
 
     @api.multi
     def action_open_url(self):
