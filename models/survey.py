@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import csv
 import datetime
 import logging
 import csv
 import re
+import io
+import zipfile
 import base64
 import uuid
 from collections import Counter, OrderedDict
@@ -74,6 +75,8 @@ class SurveyInputLine(models.Model):
                 file = post[file_tag]
                 if file:
                     content = file.read()
+                    # TODO: file extention
+                    # ext = file.
                     vals.update({'skipped': False})
                     # 替换文件内容
                     if old_uil and old_uil.value_number:
@@ -82,7 +85,7 @@ class SurveyInputLine(models.Model):
                     else:
                         # 新增文件
                         att = {
-                            'name': question.file_name,
+                            'name': 'uploaded_' + question.file_name,
                             'datas_fname': question.file_name,
                             'res_model': 'survey.user_input',
                             'datas': base64.b64encode(content),
@@ -99,43 +102,32 @@ class SurveyInputLine(models.Model):
             old_uil.create(vals)
         return True
 
+
 def to_csv_line(line):
-     title = line.question_id.question
-     val = ""
-     if 'text' in str(line.answer_type):
-         val = line.value_text
-     if line.answer_type == 'date':
-         val = line.value_date
-     if line.answer_type == 'suggestion':
-         #val = line.question_id.labels_ids[line.value_suggested].value
-         val = line.value_suggested.value
-     if line.answer_type == 'number':
-         val = line.value_number
-     return (title, str(val))
+    title = line.question_id.question
+    val = ""
+    if 'text' in str(line.answer_type):
+        val = line.value_text
+    if line.answer_type == 'date':
+        val = line.value_date
+    if line.answer_type == 'suggestion':
+        # val = line.question_id.labels_ids[line.value_suggested].value
+        val = line.value_suggested.value
+    if line.answer_type == 'number':
+        val = line.value_number
+    return (title, str(val))
+
 
 class SurveyUserInput(models.Model):
     _inherit = 'survey.user_input'
     survey_id = fields.Many2one('survey.survey', readonly=False)
     partner_id = fields.Many2one('res.partner', readonly=False)
     task_id = fields.Many2one('project.task', string='附加到任务')
+
     state = fields.Selection(readonly=False)
     type = fields.Selection(readonly=False)
     email = fields.Char(readonly=False)
 
-    def to_csv_line(self, line):
-        title = line.question_id.question
-        val = ""
-        if 'text' in str(line.answer_type):
-            val = line.value_text
-        if line.answer_type == 'date':
-            val = str(line.value_date)
-        if line.answer_type == 'suggestion':
-            val = line.question_id.label_ids[line.value_suggested_row].value
-        if line.answer_type == 'number':
-            val = string(line.value_number)
-        return (title, val)
-
-
     @api.multi
     def pack_as_attach(self):
         self.ensure_one()
@@ -143,35 +135,8 @@ class SurveyUserInput(models.Model):
         # TODO: Step1. Gen csv from inputs
         csv_f = csv.StringIO()
         csv_w = csv.DictWriter(csv_f, ['title', 'value'])
-        lines = [self.to_csv_line(l) for l in self.user_input_line_ids if l.question_id.type != 'attach' and l.skipped = False]
-        for t, v in lines:
-            csv_w.writerow({'title': t, 'value': v})
-
-        att = {
-            'name': self.question_id.file_name,
-            'datas_fname': self.question_id.file_name,
-            'res_model': 'survey.user_input',
-            'datas': base64.b64encode(content),
-            # 'res_field': question.id,
-            'res_id': user_input_id
-        }
-        csv_att = Attach.create(att)
-
-        # Step2. Gen zip
-        return
-
-    @api.multi
-    def action_sendto_provider(self):
-        return
-
-    @api.multi
-    def pack_as_attach(self):
-        self.ensure_one()
-        Attach = self.env['ir.attachment']
-        # TODO: Step1. Gen csv from inputs
-        csv_f = csv.StringIO()
-        csv_w = csv.DictWriter(csv_f, ['title', 'value'])
-        lines = [to_csv_line(l) for l in self.user_input_line_ids if l.question_id.type != 'attach' and l.skipped == False]
+        lines = [to_csv_line(l) for l in self.user_input_line_ids
+                 if l.question_id.type != 'attach' and l.skipped == False]
         for t, v in lines:
             csv_w.writerow({'title': t, 'value': v})
 
@@ -186,7 +151,21 @@ class SurveyUserInput(models.Model):
         csv_att = Attach.create(att)
 
         # Step2. Gen zip
-        return
+        zip_filename = "doc.zip"
+        bIO = io.BytesIO()
+        zip_file = zipfile.ZipFile(bIO, "w", zipfile.ZIP_DEFLATED)
+
+        for a in Attach.search([('res_id', '=', self.id), ('res_model', '=', 'survey.user_input')]):
+            zip_file.writestr(a.datas_fname, base64.b64decode(a.datas))
+        zip_file.close()
+
+        att.update({
+            'name': 'attachments',
+            'datas_fname': 'doc.zip',
+            'datas': base64.b64encode(bIO.getvalue())
+        })
+        Attach.create(att)
+        return True
 
     @api.multi
     def action_open_url(self):
